@@ -29,6 +29,7 @@ export interface IItem {
 	description: string;
 	size_id: number;
 	price_in_cents: number;
+	item_type?: string;
 }
 
 export interface IOrder {

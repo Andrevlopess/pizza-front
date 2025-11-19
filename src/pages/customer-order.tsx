@@ -201,7 +201,7 @@ export default function CustomerOrderPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="text-4xl">🍕</div>
-              <h1 className="text-2xl font-bold">Pizzaria Delícia</h1>
+              <h1 className="text-2xl font-bold">Pizzaria Popovici</h1>
             </div>
             <div className="flex items-center gap-4">
               {/* Profile Button */}
@@ -338,31 +338,39 @@ export default function CustomerOrderPage() {
         {/* Products Grid */}
         <main className="flex-1 overflow-y-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold mb-6">Nosso Cardápio</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <Card key={product.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
-                <CardDescription>{product.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-orange-600">
-                    {formatPrice(product.price_in_cents)}
-                  </span>
-                  <Button
-                    className="bg-orange-600 hover:bg-orange-700"
-                    onClick={() => addToCart(product.id!)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          </div>
+          <h2 className="text-3xl font-bold mb-6">Nosso Cardápio</h2>
+
+          {products.length === 0 ? (
+            <div className="py-12 px-6 bg-white rounded-lg shadow-sm text-center">
+              <p className="text-lg font-medium">No momento não há itens no cardápio.</p>
+              <p className="text-sm text-muted-foreground mt-2">Tente novamente mais tarde ou entre em contato conosco para mais informações.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map((product) => (
+                <Card key={product.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle>{product.name}</CardTitle>
+                    <CardDescription>{product.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-orange-600">
+                        {formatPrice(product.price_in_cents)}
+                      </span>
+                      <Button
+                        className="bg-orange-600 hover:bg-orange-700"
+                        onClick={() => addToCart(product.id!)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 

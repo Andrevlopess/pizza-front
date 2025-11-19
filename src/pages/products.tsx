@@ -24,6 +24,7 @@ const ProductsPage = () => {
     description: '',
     size_id: 1,
     price_in_cents: 0,
+    item_type: '',
   });
   const [sizeFormData, setSizeFormData] = useState<Omit<IItemSize, 'id'>>({
     name: '',
@@ -86,6 +87,7 @@ const ProductsPage = () => {
       description: product.description,
       size_id: product.size_id,
       price_in_cents: product.price_in_cents,
+      item_type: product.item_type || '',
     });
     setIsDialogOpen(true);
   };
@@ -98,6 +100,7 @@ const ProductsPage = () => {
       description: '',
       size_id: 1,
       price_in_cents: 0,
+      item_type: '',
     });
   };
 
@@ -294,6 +297,24 @@ const ProductsPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="item_type">Tipo de Item</Label>
+                  <Select
+                    value={formData.item_type}
+                    onValueChange={(value) => handleInputChange('item_type', value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pizza">Pizza</SelectItem>
+                      <SelectItem value="Bebida">Bebida</SelectItem>
+                      <SelectItem value="Sobremesa">Sobremesa</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="size_id">Tamanho</Label>
                   <Select
                     value={String(formData.size_id)}
@@ -344,6 +365,7 @@ const ProductsPage = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Descrição</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Tamanho</TableHead>
                 <TableHead>Preço</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -354,6 +376,7 @@ const ProductsPage = () => {
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.description}</TableCell>
+                  <TableCell className="capitalize">{product.item_type || '-'}</TableCell>
                   <TableCell>{getSizeName(product.size_id)}</TableCell>
                   <TableCell>{formatPrice(product.price_in_cents)}</TableCell>
                   <TableCell className="text-right">
