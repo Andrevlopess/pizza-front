@@ -1,0 +1,96 @@
+CREATE TABLE USERS (
+  	ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	NAME VARCHAR(255),
+	EMAIL VARCHAR(255),
+	PHONE VARCHAR(11),
+	ADDRESS VARCHAR(255),
+	CITY VARCHAR(255),
+	STATE VARCHAR(255),
+	ZIP_CODE VARCHAR(10),
+	STREET VARCHAR(255),
+	NEIGHBORHOOD VARCHAR(255),
+	NUMBER INT
+);
+
+CREATE TABLE ITEM_SIZES (
+	ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	NAME VARCHAR(1),
+	DESCRIPTION VARCHAR(255)
+);
+
+CREATE TABLE PAYMENT_METHODS  (
+	ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	NAME VARCHAR(255)
+);
+
+
+CREATE TABLE ITEMS (
+	ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	NAME VARCHAR(255),
+	DESCRIPTION VARCHAR(500),
+	SIZE_ID INT REFERENCES ITEM_SIZES(ID),
+	PRICE_IN_CENTS INT
+);
+
+
+CREATE TABLE ORDERS (
+	ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	USER_ID INT REFERENCES USERS(ID),
+	PAYMENT_METHOD_ID INT REFERENCES PAYMENT_METHODS(ID),
+	CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ORDER_ITEMS (
+	ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	ORDER_ID INT REFERENCES ORDERS(ID),
+	ITEM_ID INT REFERENCES ITEMS(ID),
+	QUANTITY INT 
+);
+
+
+INSERT INTO USERS (NAME, EMAIL, PHONE, ADDRESS, CITY, STATE, ZIP_CODE, STREET, NEIGHBORHOOD, NUMBER) VALUES
+('Alice Johnson', 'alice.johnson@example.com', '12345678901', '123 Main St', 'New York', 'NY', '10001', 'Main St', 'Midtown', 101),
+('Bob Smith', 'bob.smith@example.com', '98765432100', '456 Oak Ave', 'Los Angeles', 'CA', '90001', 'Oak Ave', 'Downtown', 202),
+('Carol Davis', 'carol.davis@example.com', '55588877766', '789 Pine Rd', 'Chicago', 'IL', '60601', 'Pine Rd', 'Lincoln Park', 303),
+('David Wilson', 'david.wilson@example.com', '44433322211', '321 Maple Ln', 'Houston', 'TX', '77001', 'Maple Ln', 'Heights', 404),
+('Eve Thompson', 'eve.thompson@example.com', '11122233344', '654 Elm St', 'Miami', 'FL', '33101', 'Elm St', 'Coral Gables', 505);
+
+INSERT INTO ITEM_SIZES (NAME, DESCRIPTION) VALUES
+('S', 'Small size'),
+('M', 'Medium size'),
+('L', 'Large size'),
+('X', 'Extra large size');
+
+INSERT INTO PAYMENT_METHODS (NAME) VALUES
+('Credit Card'),
+('Debit Card'),
+('Cash'),
+('Pix'),
+('PayPal');
+
+INSERT INTO ITEMS (NAME, DESCRIPTION, SIZE_ID, PRICE_IN_CENTS) VALUES
+('T-Shirt', 'Cotton T-shirt available in multiple sizes', 2, 1999),
+('Jeans', 'Blue denim jeans', 3, 4999),
+('Jacket', 'Winter jacket with hood', 4, 8999),
+('Sneakers', 'Comfortable running sneakers', 3, 5999),
+('Hat', 'Baseball cap', 1, 1499),
+('Socks', 'Pack of 3 cotton socks', 1, 999);
+
+INSERT INTO ORDERS (USER_ID, PAYMENT_METHOD_ID) VALUES
+(1, 1),
+(2, 4),
+(3, 2),
+(4, 3),
+(5, 5);
+
+INSERT INTO ORDER_ITEMS (ORDER_ID, ITEM_ID, QUANTITY) VALUES
+(1, 1, 2),
+(1, 5, 1),
+(2, 2, 1),
+(2, 6, 3),
+(3, 3, 1),
+(3, 1, 2),
+(4, 4, 1),
+(5, 1, 1),
+(5, 2, 2),
+(5, 3, 1);
