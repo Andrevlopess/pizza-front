@@ -72,3 +72,4 @@ export default defineConfig([
 ])
 ```
 # pizza-front
+# p2-pizzaria-front
