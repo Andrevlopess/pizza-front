@@ -308,28 +308,36 @@ export default function OrdersPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paymentMethods.map((method) => (
-                          <TableRow key={method.id}>
-                            <TableCell>{method.id}</TableCell>
-                            <TableCell className="font-medium">{method.name}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditPaymentMethod(method)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeletePaymentMethod(method.id!)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                        {paymentMethods.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                              Nenhum método de pagamento encontrado, adicione para aparecerem aqui
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : (
+                          paymentMethods.map((method) => (
+                            <TableRow key={method.id}>
+                              <TableCell>{method.id}</TableCell>
+                              <TableCell className="font-medium">{method.name}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditPaymentMethod(method)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeletePaymentMethod(method.id!)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -481,33 +489,41 @@ export default function OrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">#{order.id}</TableCell>
-                  <TableCell>{getUserName(order.user_id)}</TableCell>
-                  <TableCell>{getPaymentMethodName(order.payment_method_id)}</TableCell>
-                  <TableCell className="text-center">{getOrderTotalItems(order)}</TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {formatPrice(getOrderTotalAmount(order))}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(order)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(order.id!)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+              {orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    Nenhum pedido encontrado, adicione para aparecerem aqui
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">#{order.id}</TableCell>
+                    <TableCell>{getUserName(order.user_id)}</TableCell>
+                    <TableCell>{getPaymentMethodName(order.payment_method_id)}</TableCell>
+                    <TableCell className="text-center">{getOrderTotalItems(order)}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatPrice(getOrderTotalAmount(order))}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(order)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(order.id!)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>

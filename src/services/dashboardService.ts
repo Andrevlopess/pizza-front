@@ -8,5 +8,11 @@ export interface DashboardStats {
 }
 
 export const dashboardService = {
-  getStats: () => api.get<DashboardStats>('/dashboard/stats'),
+  getStats: (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const queryString = params.toString();
+    return api.get<DashboardStats>(`/dashboard/stats${queryString ? `?${queryString}` : ''}`);
+  },
 };

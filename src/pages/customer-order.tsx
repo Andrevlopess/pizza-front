@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,8 +18,11 @@ export default function CustomerOrderPage() {
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
   const [cart, setCart] = useState<Array<{ item_id: number; quantity: number }>>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number>(0);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOrderSuccess, setIsOrderSuccess] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutEmail, setCheckoutEmail] = useState('');
+  const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const [needsAddress, setNeedsAddress] = useState(false);
 
   // User form data
   const [userFormData, setUserFormData] = useState<Omit<IUser, 'id'>>({
@@ -38,7 +41,6 @@ export default function CustomerOrderPage() {
   useEffect(() => {
     loadProducts();
     loadPaymentMethods();
-    loadCurrentUser();
   }, []);
 
   const loadProducts = async () => {
@@ -62,27 +64,52 @@ export default function CustomerOrderPage() {
     }
   };
 
-  const loadCurrentUser = async () => {
+  const checkUserByEmail = async (email: string) => {
+    setIsLoadingUser(true);
     try {
-      // Por enquanto, pegar o primeiro usuário ou criar um novo
-      const users = await userService.getAll();
-      if (users.length > 0) {
-        setCurrentUser(users[0]);
+      const response = await fetch(`http://localhost:3000/api/users/email/${encodeURIComponent(email)}`);
+      
+      if (response.ok) {
+        // Usuário existe - preencher dados
+        const existingUser = await response.json();
+        setCurrentUser(existingUser);
         setUserFormData({
-          name: users[0].name,
-          email: users[0].email,
-          phone: users[0].phone,
-          address: users[0].address,
-          city: users[0].city,
-          state: users[0].state,
-          zip_code: users[0].zip_code,
-          street: users[0].street,
-          neighborhood: users[0].neighborhood,
-          number: users[0].number,
+          name: existingUser.name,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          address: existingUser.address,
+          city: existingUser.city,
+          state: existingUser.state,
+          zip_code: existingUser.zip_code,
+          street: existingUser.street,
+          neighborhood: existingUser.neighborhood,
+          number: existingUser.number,
         });
+        setNeedsAddress(false);
+      } else if (response.status === 404) {
+        // Usuário não existe - solicitar endereço
+        setCurrentUser(null);
+        setUserFormData({
+          name: '',
+          email: email,
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          zip_code: '',
+          street: '',
+          neighborhood: '',
+          number: 0,
+        });
+        setNeedsAddress(true);
+      } else {
+        throw new Error('Erro ao verificar usuário');
       }
     } catch (error) {
-      console.error('Failed to load user:', error);
+      console.error('Failed to check user:', error);
+      alert('Erro ao verificar usuário. Tente novamente.');
+    } finally {
+      setIsLoadingUser(false);
     }
   };
 
@@ -136,43 +163,32 @@ export default function CustomerOrderPage() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let userId: number;
+      
       if (currentUser?.id) {
+        // Atualizar usuário existente
         await userService.update(currentUser.id, userFormData);
-        setCurrentUser({ ...userFormData, id: currentUser.id });
-        alert('Perfil atualizado com sucesso!');
-        setIsProfileOpen(false);
+        userId = currentUser.id;
       } else {
+        // Criar novo usuário
         const newUser = await userService.create(userFormData);
         setCurrentUser(newUser);
-        alert('Perfil criado com sucesso!');
-        setIsProfileOpen(false);
+        userId = newUser.id!;
       }
+      
+      setIsCheckoutOpen(false);
+      // Agora finalizar o pedido
+      await placeOrder(userId);
     } catch (error) {
       console.error('Failed to save profile:', error);
       alert('Erro ao salvar perfil. Tente novamente.');
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (!currentUser?.id) {
-      alert('Por favor, complete seu perfil antes de fazer um pedido.');
-      setIsProfileOpen(true);
-      return;
-    }
-
-    if (cart.length === 0) {
-      alert('Adicione itens ao carrinho antes de finalizar o pedido.');
-      return;
-    }
-
-    if (!selectedPaymentMethod) {
-      alert('Selecione um método de pagamento.');
-      return;
-    }
-
+  const placeOrder = async (userId: number) => {
     try {
       const orderData = {
-        user_id: currentUser.id,
+        user_id: userId,
         payment_method_id: selectedPaymentMethod,
         items: cart.map(item => ({
           item_id: item.item_id,
@@ -183,6 +199,9 @@ export default function CustomerOrderPage() {
       await orderService.create(orderData);
       setIsOrderSuccess(true);
       setCart([]);
+      setCheckoutEmail('');
+      setCurrentUser(null);
+      setNeedsAddress(false);
       
       setTimeout(() => {
         setIsOrderSuccess(false);
@@ -193,138 +212,229 @@ export default function CustomerOrderPage() {
     }
   };
 
+  const handlePlaceOrder = async () => {
+    if (cart.length === 0) {
+      alert('Adicione itens ao carrinho antes de finalizar o pedido.');
+      return;
+    }
+
+    if (!selectedPaymentMethod) {
+      alert('Selecione um método de pagamento.');
+      return;
+    }
+
+    // Abrir modal de checkout para solicitar email
+    setIsCheckoutOpen(true);
+  };
+
+  const handleConfirmOrder = async () => {
+    if (currentUser?.id) {
+      await placeOrder(currentUser.id);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-b from-orange-50 to-white flex flex-col">
       {/* Header */}
-      <header className="bg-orange-600 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-primary text-white shadow-lg">
+        <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="text-4xl">🍕</div>
               <h1 className="text-2xl font-bold">Pizzaria Popovici</h1>
             </div>
             <div className="flex items-center gap-4">
-              {/* Profile Button */}
-              <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" className="text-white hover:bg-orange-700">
-                    <User className="h-5 w-5 mr-2" />
-                    {currentUser?.name || 'Meu Perfil'}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Meu Perfil</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleUpdateProfile} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Nome *</Label>
-                        <Input
-                          id="name"
-                          value={userFormData.name}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, name: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={userFormData.email}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, email: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Telefone *</Label>
-                        <Input
-                          id="phone"
-                          value={userFormData.phone}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, phone: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="zip_code">CEP *</Label>
-                        <Input
-                          id="zip_code"
-                          value={userFormData.zip_code}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, zip_code: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="street">Rua *</Label>
-                        <Input
-                          id="street"
-                          value={userFormData.street}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, street: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="number">Número *</Label>
-                        <Input
-                          id="number"
-                          type="number"
-                          value={userFormData.number}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, number: parseInt(e.target.value) }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="neighborhood">Bairro *</Label>
-                        <Input
-                          id="neighborhood"
-                          value={userFormData.neighborhood}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="city">Cidade *</Label>
-                        <Input
-                          id="city"
-                          value={userFormData.city}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, city: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="state">Estado *</Label>
-                        <Input
-                          id="state"
-                          value={userFormData.state}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, state: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label htmlFor="address">Complemento</Label>
-                        <Input
-                          id="address"
-                          value={userFormData.address}
-                          onChange={(e) => setUserFormData(prev => ({ ...prev, address: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => setIsProfileOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
-                        Salvar
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              {currentUser && (
+                <div className="text-white">
+                  <User className="h-5 w-5 inline mr-2" />
+                  {currentUser.name}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Checkout Dialog */}
+      <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Finalizar Pedido</DialogTitle>
+          </DialogHeader>
+          
+          {isLoadingUser ? (
+            <div className="py-8 text-center">
+              <p>Verificando usuário...</p>
+            </div>
+          ) : !currentUser && !needsAddress ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="checkout-email">Digite seu email para continuar</Label>
+                <Input
+                  id="checkout-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={checkoutEmail}
+                  onChange={(e) => setCheckoutEmail(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsCheckoutOpen(false);
+                  setCheckoutEmail('');
+                }}>
+                  Cancelar
+                </Button>
+                <Button 
+                  type="button" 
+                  className="bg-orange-600 hover:bg-orange-700"
+                  onClick={() => checkUserByEmail(checkoutEmail)}
+                  disabled={!checkoutEmail}
+                >
+                  Continuar
+                </Button>
+              </div>
+            </div>
+          ) : needsAddress ? (
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <p className="text-sm text-muted-foreground">Não encontramos seu cadastro. Por favor, complete seus dados:</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome *</Label>
+                  <Input
+                    id="name"
+                    value={userFormData.name}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={userFormData.email}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                    disabled
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone *</Label>
+                  <Input
+                    id="phone"
+                    value={userFormData.phone}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="zip_code">CEP *</Label>
+                  <Input
+                    id="zip_code"
+                    value={userFormData.zip_code}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, zip_code: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="street">Rua *</Label>
+                  <Input
+                    id="street"
+                    value={userFormData.street}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, street: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="number">Número *</Label>
+                  <Input
+                    id="number"
+                    type="number"
+                    value={userFormData.number}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, number: parseInt(e.target.value) }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">Bairro *</Label>
+                  <Input
+                    id="neighborhood"
+                    value={userFormData.neighborhood}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade *</Label>
+                  <Input
+                    id="city"
+                    value={userFormData.city}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, city: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">Estado *</Label>
+                  <Input
+                    id="state"
+                    value={userFormData.state}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, state: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="address">Complemento</Label>
+                  <Input
+                    id="address"
+                    value={userFormData.address}
+                    onChange={(e) => setUserFormData(prev => ({ ...prev, address: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsCheckoutOpen(false);
+                  setCheckoutEmail('');
+                  setNeedsAddress(false);
+                }}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
+                  Criar Cadastro e Finalizar Pedido
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="font-semibold text-green-900 mb-2">✓ Usuário encontrado!</p>
+                <div className="space-y-1 text-sm text-green-800">
+                  <p><strong>Nome:</strong> {userFormData.name}</p>
+                  <p><strong>Email:</strong> {userFormData.email}</p>
+                  <p><strong>Telefone:</strong> {userFormData.phone}</p>
+                  <p><strong>Endereço:</strong> {userFormData.street}, {userFormData.number} - {userFormData.neighborhood}</p>
+                  <p><strong>Cidade:</strong> {userFormData.city} - {userFormData.state}</p>
+                  <p><strong>CEP:</strong> {userFormData.zip_code}</p>
+                  {userFormData.address && <p><strong>Complemento:</strong> {userFormData.address}</p>}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsCheckoutOpen(false);
+                  setCheckoutEmail('');
+                }}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleConfirmOrder} className="bg-orange-600 hover:bg-orange-700">
+                  Confirmar e Finalizar Pedido
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Success Message */}
       {isOrderSuccess && (

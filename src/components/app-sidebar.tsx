@@ -1,8 +1,9 @@
-import { Home, Inbox, Pizza, ShoppingBag, Users } from "lucide-react"
+import { Home, Inbox, LogOut, Pizza, ShoppingBag, Users } from "lucide-react"
 
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -11,6 +12,8 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/contexts/AuthContext"
+import { useNavigate } from "react-router-dom"
 
 // Menu items.
 const items = [
@@ -37,6 +40,16 @@ const items = [
 ]
 
 export function AppSidebar() {
+    const { logout } = useAuth()
+    const navigate = useNavigate()
+
+    const handleLogout = () => {
+        if (confirm('Deseja realmente sair?')) {
+            logout()
+            navigate('/login')
+        }
+    }
+
     return (
         <Sidebar>
             <SidebarHeader>
@@ -47,8 +60,8 @@ export function AppSidebar() {
                             className="data-[slot=sidebar-menu-button]:p-1.5!"
                         >
                             <a href="#">
-                                <Pizza className="size-5" />
-                                <span className="text-base font-semibold">Pizzaria</span>
+                                <Pizza className="size-12" />
+                                <span className="text-2xl font-semibold">Pizzaria</span>
                             </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -73,6 +86,16 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={handleLogout}>
+                            <LogOut />
+                            <span>Sair</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
         </Sidebar>
     )
 }

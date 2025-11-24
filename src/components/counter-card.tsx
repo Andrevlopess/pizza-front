@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardAction,
@@ -6,16 +6,26 @@ import {
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 export interface CounterCardProps {
     title: string;
     description: string;
     counter: number | string;
+    link?: string;
 }
 
 
-export function CounterCard({ title, description, counter }: CounterCardProps) {
+export function CounterCard({ title, description, counter, link }: CounterCardProps) {
+    const navigate = useNavigate()
+
+    const handleClick = () => {
+        if (link) {
+            navigate(link)
+        }
+    }
+
     return (
         <Card className="w-full">
             <CardHeader>
@@ -24,7 +34,13 @@ export function CounterCard({ title, description, counter }: CounterCardProps) {
                     {description}
                 </CardDescription>
                 <CardAction>
-                    <Button variant="link">Ver mais</Button>
+                    <Button 
+                        variant="link" 
+                        onClick={handleClick}
+                        disabled={!link}
+                    >
+                        Ver mais
+                    </Button>
                 </CardAction>
             </CardHeader>
             <CardContent>

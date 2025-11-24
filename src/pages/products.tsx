@@ -237,29 +237,37 @@ const ProductsPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {sizes.map((size) => (
-                          <TableRow key={size.id}>
-                            <TableCell>{size.id}</TableCell>
-                            <TableCell className="font-medium">{size.name}</TableCell>
-                            <TableCell>{size.description}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditSize(size)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteSize(size.id!)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                        {sizes.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                              Nenhum tamanho encontrado, adicione para aparecerem aqui
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : (
+                          sizes.map((size) => (
+                            <TableRow key={size.id}>
+                              <TableCell>{size.id}</TableCell>
+                              <TableCell className="font-medium">{size.name}</TableCell>
+                              <TableCell>{size.description}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditSize(size)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteSize(size.id!)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -372,31 +380,39 @@ const ProductsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.description}</TableCell>
-                  <TableCell className="capitalize">{product.item_type || '-'}</TableCell>
-                  <TableCell>{getSizeName(product.size_id)}</TableCell>
-                  <TableCell>{formatPrice(product.price_in_cents)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(product)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(product.id!)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+              {products.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    Nenhum produto encontrado, adicione para aparecerem aqui
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>{product.description}</TableCell>
+                    <TableCell className="capitalize">{product.item_type || '-'}</TableCell>
+                    <TableCell>{getSizeName(product.size_id)}</TableCell>
+                    <TableCell>{formatPrice(product.price_in_cents)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(product)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(product.id!)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
